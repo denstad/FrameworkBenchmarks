@@ -1,0 +1,3 @@
+vendor/koru/.zig-cache
+vendor/koru/zig-out
+**/.git

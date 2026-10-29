@@ -1,0 +1,62 @@
+// Koru Standard Library: the `grants` part of bridge.kz — the
+// introspection-granted verbs' impls. Joined via `~part grants` in
+// bridge.kz; merged into the bridge module at load.
+
+/// `introspection_verbs` — the render `vocabulary`/`grammar` append and the
+/// prompt doc exports — lives in the `wiregate` part beside the host_verbs
+/// table it renders at comptime, so prompt, parser, and dispatch share one
+/// source. `note` is the observer channel: reasoning kept out of residue
+/// and out of the user's ear, bound `rN` like any result.
+
+// `bind(name: "x", value: <datum>)` — the session's injection verb. The
+// harness hands the real world back through it: a tool result that arrived
+// out-of-band becomes a named Koru value the next turn can dereference.
+// `value:` is the datum rendered — a JSON object exposes its members as
+// fields (`r3.user_id`), a scalar binds as-is. The name it reports back is
+// the name it was given; auto-bound results report `r{N}` instead.
+fn hostBind(view: *const Interp.HostView, inv: *const Interp.Invocation, out: *Interp.DispatchResult) anyerror!void {
+    const se = view.session_env orelse {
+        view.error_detail.* = "'bind' has nowhere to write — this run carries no session env";
+        return error.DispatchFailed;
+    };
+    var bname: ?[]const u8 = null;
+    var bval: ?[]const u8 = null;
+    for (inv.args) |a| {
+        if (std.mem.eql(u8, a.name, "name")) bname = a.value;
+        if (std.mem.eql(u8, a.name, "value")) bval = a.value;
+    }
+    const bn = bname orelse {
+        view.error_detail.* = "'bind' needs a `name:` field — bind(name: \"x\", value: ...)";
+        return error.DispatchFailed;
+    };
+    const bv = bval orelse {
+        view.error_detail.* = "'bind' needs a `value:` field — bind(name: \"x\", value: ...)";
+        return error.DispatchFailed;
+    };
+    const tmp_fields = [_]Interp.NamedField{
+        .{ .name = "__type_ref", .value = .{ .string_val = bv } },
+    };
+    bindSessionValue(se, bn, .{ .branch = "", .fields = &tmp_fields });
+    const S = struct { threadlocal var field_buf: [1]Interp.NamedField = undefined; };
+    S.field_buf[0] = .{ .name = "__type_ref", .value = .{ .string_val = bn } };
+    out.* = .{ .branch = "", .fields = S.field_buf[0..1] };
+}
+
+// `abandon(reason: ...)` — the declared bail-out: the agent ends the session
+// itself, saying why. The marker rides the dispatch result's branch — the
+// turn loop reads it off the `.result` arm, prints the reason, and stops the
+// reply there. A bail that binds no name and fakes no failure: the reason is
+// the payload, durable in the wire source like a note's text.
+fn hostAbandon(view: *const Interp.HostView, inv: *const Interp.Invocation, out: *Interp.DispatchResult) anyerror!void {
+    var reason: ?[]const u8 = null;
+    for (inv.args) |a| {
+        if (std.mem.eql(u8, a.name, "reason")) reason = a.value;
+    }
+    const r = reason orelse {
+        view.error_detail.* = "'abandon' needs a `reason:` field — abandon(reason: \"why you're stopping\")";
+        return error.DispatchFailed;
+    };
+    const S = struct { threadlocal var field_buf: [1]Interp.NamedField = undefined; };
+    S.field_buf[0] = .{ .name = "__type_ref", .value = .{ .string_val = r } };
+    out.* = .{ .branch = "abandoned", .fields = S.field_buf[0..1] };
+}

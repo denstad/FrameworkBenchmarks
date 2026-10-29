@@ -1,0 +1,11 @@
+{
+    "name": "techempower-orisha",
+    "version": "0.1.0",
+    "description": "TechEmpower FrameworkBenchmarks entry — Orisha, all seven test routes",
+    "paths": {
+        "std": "vendor/koru/koru_std",
+        "orisha": "vendor/orisha/lib",
+        "koru": "vendor/koru-libs",
+        "techempower": "."
+    }
+}

@@ -1,0 +1,52 @@
+// Koru Standard Library: Grid — a fixed, positionally-addressed table
+// =====================================================================
+//
+// A grid is the OTHER kind of table, and the distinction is one question:
+// CAN A ROW MOVE?
+//
+//   std/store — yes. `take` swap-removes, so position is not identity, so a
+//               row is named by a generational HANDLE and every access pays a
+//               brand + bounds + generation check. The store earns that
+//               machinery by supporting removal.
+//
+//   std/grid  — no. Every cell exists from declaration and none is ever
+//               inserted, removed or relocated, so POSITION IS IDENTITY. A
+//               grid pays nothing: no handles, no generation word, no sparse
+//               indirection, no freelist, no `len`.
+//
+// A grid is the degenerate, fastest table — it gets there by forbidding, not optimising.
+//
+// USAGE:
+//   import std/grid
+//
+//   std/grid:new(cells, size: 4096) { count: 0[i64], sx: 0.0[f32] }
+//   std/grid:stored { cells[h].count: cells[h].count + 1 }
+//
+// SIZE, not capacity. `capacity: N` means "up to N, currently `len`". A grid
+// is EXACTLY N cells, all live from the moment it is declared. Different
+// contract, different word, so the two declarations cannot be misread.
+//
+// OUT OF RANGE TRAPS (ruled 2026-08-03). An index outside `0..size` is a
+// panic naming the grid, matching the store's stale-handle floor: fail loud,
+// never silently address a neighbour. Wrapping is the PROGRAM's decision and
+// belongs in the source as an explicit `% size` where a reader can see it — a
+// spatial hash wants exactly that and should say so.
+//
+// The check is a floor, not a tax to be paid forever: an index the compiler
+// can prove in range needs none, and a `! sweep` arm over a grid is precisely
+// that case — the loop constructs the index from `0..size`, so validating it
+// would be validating a fact established one line above. That is the same
+// floor-then-prove-away arc the store's handle check follows.
+// NOT REACTIVE, deliberately — reactivity in Koru is spliced at comptime and
+// costs nothing when nobody listens.
+~part read
+~part slice
+~part readwalk
+~part new
+~part stored
+~part idx
+~part sweep
+~part cursor
+~part for
+~part walk
+~part pool

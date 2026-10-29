@@ -1,0 +1,7 @@
+// Koru Standard Library: the `args` part of interpreter.kz — the arg
+// judgment: field membership and bound references, one walk over the
+// flow before it runs. Joined via `~part args` in interpreter.kz;
+// merged into the interpreter module at load.
+//
+// The walk itself moved to the `flowchecks` part — the field-membership
+// and bound-reference rationale moved with it.

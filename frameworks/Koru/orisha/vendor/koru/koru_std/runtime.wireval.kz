@@ -1,0 +1,19 @@
+// Koru Standard Library: the `wireval` part of runtime — the wire grammar's
+// rejection vocabulary; the teaching prose lives in the `grammartext` part
+// (flat sibling — parts cannot nest).
+// Joined via `~part wireval`
+// in runtime.kz; merged into the runtime module at load.
+//
+// WIRE_GRAMMAR_TEXT (the `grammartext` part) and the `wirescan` scanner move as one:
+// the text describes exactly what the scanner enforces.
+
+// `not_invocation` marks the refusals where nothing ever lexed as `verb(` —
+// prose, markdown fences, a lone arm — as opposed to a malformed invocation.
+// The bridge binds those items as residue so the model's own words become a
+// session value it can re-emit through a real verb.
+const WireRejection = struct { message: []const u8, byte: usize, not_invocation: bool };
+
+// The character predicates (`wireIdentStart`/`wireIdentChar`/`wireBareValueChar`),
+// rejection builders (`wireReject`/`wireRejectResidue`), and `wireLineColumn` live
+// in runtime.wirelex.kz (the `wirelex` part). The scanner is the `wirescan` part —
+// type-directed there, scope-blind when called without lookups.

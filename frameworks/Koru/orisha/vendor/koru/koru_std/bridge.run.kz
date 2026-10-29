@@ -1,0 +1,39 @@
+// Koru Standard Library: the `run` part of bridge.kz.
+// Joined via `~part run` in bridge.kz; merged into the bridge module at load.
+
+// ============================================================================
+// RUN - Execute a turn against the session's resources
+// ============================================================================
+//
+// The verb the bridge existed without: `std/runtime:run` takes a `handle_pool`
+// and a `scope`, and a bridge is exactly that pairing outliving a single turn.
+//
+// The branch set MIRRORS `std/runtime:run` plus TWO bridge-only branches.
+// `?partial` is where the mirror ends: sequencing is the agent channel's
+// demand (frag-partial-programs), not `runtime:run`'s contract, which stays
+// single (orisha's endpoint depends on it). A multi-item turn reports here,
+// always, even fully green — one shape for "a turn ran steps".
+// `residue` is the other: a turn whose items were all prose binds every
+// refused text as a session value and hands the turn back to the agent —
+// the callback the harness owes a reply that carried no invocation.
+//
+// Two of that tor's parameters are deliberately not forwarded:
+//
+// - `budget` — metering is PARKED. It earns its keep on a public-facing API.
+// - `auto_discharge` — always false, and it must be. A bridge-managed pool
+//   outlives the run BY DESIGN; `close` is what releases.
+
+// Two required arms: `| result` when the turn completes, `| error` when it
+// fails — the RunError union carries every failure class, `kind` naming the
+// variant (`error-decode` routes it back to the typed arms). The findings
+// stay armable as optionals — the refusal surface is charged once, not
+// nine ritual times.
+
+~pub tor run { br: *Bridge<session>, source: string<*> }
+| result { value: @import("root").koru_std.koru_interpreter.Value, used: u64, handles: u32, bound: string, trace: string }
+| error RunError
+| ?defined string
+| ?unhandled-branch { branch: string, payload: string, handles: string, bound: string }
+| ?residue { report: string, observer: bool, bound: string, text: string }
+| ?partial { ran: u32, total: u32, used: u64, handles: u32, report: string, wire_failures: u32 }
+

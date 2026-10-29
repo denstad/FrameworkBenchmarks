@@ -1,0 +1,53 @@
+// Koru Standard Library: the `checks` part of interpreter — the flow-check
+// internals. Joined via `~part checks` in interpreter.kz; merged into
+// the interpreter module at load.
+//
+// checkInvocationArgs moved to the `invargs` part — the argument-vocabulary
+// walk beside the seed helpers below.
+
+// `name` enters the bound set unless an outer scope already bound it —
+// then it stays bound (and the duplicate is the shadowing check's call).
+fn seedBound(bound: *std.StringHashMap(void), added: *std.ArrayList([]const u8), name: []const u8, allocator: std.mem.Allocator) void {
+    if (bound.contains(name)) return;
+    bound.put(name, {}) catch return;
+    added.append(allocator, name) catch {};
+}
+
+fn seedDestructure(bound: *std.StringHashMap(void), added: *std.ArrayList([]const u8), fields: []const ast.DestructureField, allocator: std.mem.Allocator) void {
+    for (fields) |f| {
+        if (f.sub.len > 0) {
+            seedDestructure(bound, added, f.sub, allocator);
+        } else {
+            seedBound(bound, added, f.name, allocator);
+        }
+    }
+}
+
+
+
+fn validateFlowRecursive(flow: *const ast.Flow, seen: *std.StringHashMap(void)) ?ValidationError {
+    // Check each continuation for bindings
+    for (flow.body.continuations) |cont| {
+        if (cont.binding) |binding_name| {
+            // Check for shadowing
+            if (seen.contains(binding_name)) {
+                return .{
+                    .message = "Shadowing not allowed: binding already exists",
+                    .binding_name = binding_name,
+                };
+            }
+            // Record this binding
+            seen.put(binding_name, {}) catch {
+                return .{
+                    .message = "Validation internal error",
+                    .binding_name = binding_name,
+                };
+            };
+        }
+
+        // Note: AST structure changed - cont.node is now ?Node not *Flow
+        // Nested continuations are in cont.continuations, handled in the outer loop
+    }
+
+    return null; // Valid!
+}

@@ -1,0 +1,7 @@
+// Koru Standard Library: the `defined` part of interpreter.kz.
+// Joined via `~part defined` in interpreter.kz; merged into the interpreter
+// module at load.
+//
+// The defined-flow dispatch machinery — MAX_DEFINED_DEPTH, findDefinedFlow,
+// dispatchDefinedFlow — moved to the `defflow` part; its recursion-cap
+// rationale moved with it.
